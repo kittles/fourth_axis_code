@@ -38,7 +38,7 @@ int main() {
     //
     // Stepper PIO
     //
-    static const uint step_pin = 25;
+    static const uint step_pin = 15;
     static const uint dir_pin = 14;
     gpio_init(dir_pin);
     gpio_set_dir(dir_pin, GPIO_OUT);
@@ -129,7 +129,7 @@ int main() {
     }
 
     int current_stepper_step = 0;
-    int current_encoder_step = 0; // this probably needs to be
+    int current_encoder_step = 0;
     int steps_to_go = 0;
     // Do nothing
     while (true) {

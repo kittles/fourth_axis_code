@@ -722,7 +722,7 @@ Disassembly of section .text:
 1000062c:	f002 feae 	bl	1000338c <__wrap___aeabi_ui2f>
 10000630:	2100      	movs	r1, #0
 10000632:	f002 fe90 	bl	10003356 <__wrap___aeabi_fdiv>
-10000636:	2319      	movs	r3, #25
+10000636:	230f      	movs	r3, #15
 10000638:	003a      	movs	r2, r7
 1000063a:	990b      	ldr	r1, [sp, #44]	; 0x2c
 1000063c:	9000      	str	r0, [sp, #0]
