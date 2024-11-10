@@ -1,0 +1,60 @@
+;
+; Copyright (c) 2023 Raspberry Pi (Trading) Ltd.
+;
+; SPDX-License-Identifier: BSD-3-Clause
+;
+.pio_version 0 // only requires PIO version 0
+
+.program stepper
+
+; infinite loop, sending pulses of the form
+; (step, dir) to some output pins
+
+
+.wrap_target
+    SET PINS, 1        ; turn on stepper pulse pin
+    SET X, 5         ; set up x so we can loop enough times to meet the minimum pin high time
+on_cycle:
+    NOP                [31] ; 32 cycles * 200 times @ 12.5 mhz is ~5.12 microseconds
+    JMP X--, on_cycle
+    SET PINS, 0        ; turn on stepper pulse pin
+    SET X, 5      ; make it so a blink is visible?
+off_cycle:
+    NOP                [31] ; delay for around 5 microseconds total
+    JMP X--, off_cycle
+.wrap
+
+
+
+% c-sdk {
+
+#include "hardware/clocks.h"
+#include "hardware/gpio.h"
+
+// max_step_rate is used to lower the clock of the state machine to save power
+// if the application doesn't require a very high sampling rate. Passing zero
+// will set the clock to the maximum
+
+static inline void stepper_program_init(PIO pio, uint sm, uint pin, int max_step_rate)
+{
+    pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
+    //gpio_pull_up(pin);
+    //gpio_pull_up(pin + 1);
+
+    pio_sm_config c = stepper_program_get_default_config(0);
+
+    sm_config_set_set_pins(&c, pin, 1); // for WAIT, IN
+
+    // passing "0" as the sample frequency,
+    if (max_step_rate == 0) {
+        sm_config_set_clkdiv(&c, 1.0);
+    } else {
+        // one state machine loop takes at most 10 cycles
+        float div = (float)clock_get_hz(clk_sys) / (10 * max_step_rate);
+        sm_config_set_clkdiv(&c, div);
+    }
+
+    pio_sm_init(pio, sm, 0, &c);
+    pio_sm_set_enabled(pio, sm, true);
+}
+%}

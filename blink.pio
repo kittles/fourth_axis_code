@@ -1,0 +1,61 @@
+.program blink
+    ; initial configuration
+    ; if clocked at 125MHz, and stepper driver needs 5us delay
+    ; using a 32 cycle delay instruction, need about 200 loops
+    ; use the pull to be the number of loops (probably 200)
+    ; then immediately set the osr back to the value, so we dont loose it
+    ; when we decrement y
+    pull block                ; get the number of loops per step, should be about 200
+    out y, 32                 ; save it to the y register
+    mov isr, y                ; copy it to isr
+
+.wrap_target
+    ; wait until program passes some number of steps requested of the stepper motor
+    ; number of steps received, time to execute
+    pull block                ; get the number of steps
+    out x, 32                 ; save it to the x register
+    ; direction pin handled outside PIO
+
+do_a_step:
+    set pins, 1
+    mov y, isr
+stay_high:
+    jmp y-- stay_high  [31] ; loop to delay until >5us has passed
+
+    ; set pin low for same amount of time
+    set pins, 0
+    mov y, isr
+stay_low:
+    jmp y-- stay_low  [31] ; loop to delay until >5us has passed
+    jmp x-- do_a_step
+.wrap
+
+% c-sdk {
+
+// Helper function (for use in C program) to initialize this PIO program
+void blink_program_init(PIO pio, uint sm, uint offset, uint pin, float div) {
+
+    // Sets up state machine and wrap target. This function is automatically
+    // generated in blink.pio.h.
+    pio_sm_config c = blink_program_get_default_config(offset);
+
+    // Allow PIO to control GPIO pin (as output)
+    pio_gpio_init(pio, pin);
+
+    // Connect pin to SET pin (control with 'set' instruction)
+    sm_config_set_set_pins(&c, pin, 1);
+
+    // Set the pin direction to output (in PIO)
+    pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
+
+    // sideset stuff
+    sm_config_set_sideset_pins(&c, pin);
+
+    // Set the clock divider for the state machine
+    //sm_config_set_clkdiv(&c, div);
+
+    // Load configuration and jump to start of the program
+    pio_sm_init(pio, sm, offset, &c);
+}
+
+%}

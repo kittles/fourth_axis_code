@@ -1,0 +1,7 @@
+/home/patrick/projects/pico/sideset_test/build/pioasm/CMakeFiles/pioasm.dir
+/home/patrick/projects/pico/sideset_test/build/pioasm/CMakeFiles/edit_cache.dir
+/home/patrick/projects/pico/sideset_test/build/pioasm/CMakeFiles/rebuild_cache.dir
+/home/patrick/projects/pico/sideset_test/build/pioasm/CMakeFiles/list_install_components.dir
+/home/patrick/projects/pico/sideset_test/build/pioasm/CMakeFiles/install.dir
+/home/patrick/projects/pico/sideset_test/build/pioasm/CMakeFiles/install/local.dir
+/home/patrick/projects/pico/sideset_test/build/pioasm/CMakeFiles/install/strip.dir
