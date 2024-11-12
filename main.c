@@ -40,6 +40,10 @@ int main() {
     //
     static const uint step_pin = 15;
     static const uint dir_pin = 14;
+    // i guess the step pin cannot be shared with cpu,
+    // so only access it through PIO
+    //gpio_init(step_pin);
+    //gpio_set_dir(step_pin, GPIO_OUT);
     gpio_init(dir_pin);
     gpio_set_dir(dir_pin, GPIO_OUT);
 
@@ -108,7 +112,14 @@ int main() {
             press_count++;
             printf("press count %d\n", press_count);
             update_display();
-            pio_sm_put_blocking(pio_stepper, sm_stepper, 148);
+            int i;
+            gpio_put(dir_pin, 0);
+            sleep_us(5);
+            for (i = 0; i < 300; i++) {
+                // have to use PIO to step because they cant share step pin
+                pio_sm_put_blocking(pio_stepper, sm_stepper, 1);
+                sleep_us(5);
+            }
         }
     }
 
