@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
@@ -96,27 +97,50 @@ int main() {
     //
     // button handling
     //
-    uint32_t press_count = 0;
+    uint32_t old_degree_offset = 0;
+    uint32_t degree_offset = 0;
     char press_count_string[10];
     void update_display () {
-        sprintf(press_count_string, "%u", press_count);
+        sprintf(press_count_string, "%u", degree_offset);
         ssd1306_clear(&disp);
         ssd1306_draw_string(&disp, 8, 24, 2, press_count_string);
         ssd1306_show(&disp);
     }
 
+    uint32_t old_steps_total = 0;
+    uint32_t steps_total = 0;
+    uint32_t degree_steps_to_go = 0;
+
+
     void onchange(button_t *button_p) {
         button_t *button = (button_t*)button_p;
-        printf("Button on pin %d changed state to %d\n", button->pin, button->state);
         if (button->state == 0) {
-            press_count++;
-            printf("press count %d\n", press_count);
+            old_degree_offset = degree_offset;
+            if (button->pin == 22) {
+                degree_offset++;
+                gpio_put(dir_pin, 0);
+            } else {
+                degree_offset--;
+                gpio_put(dir_pin, 1);
+            }
+            printf("press count %d\n", degree_offset);
             update_display();
+            sleep_us(5); // give time for dir pin to take effect
+
+            // determine steps need from degree offset
+            // need degree_offset instead of direct stepping
+            // because:
+            // steps per 1 degree = 148.1481481
+            // so error will accumulate
+            old_steps_total = round(old_degree_offset * 148.148148148);
+            steps_total = round(degree_offset * 148.148148148);
+            degree_steps_to_go = abs(old_steps_total - steps_total)
+
+
             int i;
-            gpio_put(dir_pin, 0);
-            sleep_us(5);
-            for (i = 0; i < 300; i++) {
+            for (i = 0; i < degree_steps_to_go; i++) {
                 // have to use PIO to step because they cant share step pin
+                // choose forward or reverse
                 pio_sm_put_blocking(pio_stepper, sm_stepper, 1);
                 sleep_us(5);
             }
@@ -125,6 +149,7 @@ int main() {
 
     // button
     button_t *b = create_button(22, onchange);
+    back_button_t *b = create_button(23, onchange);
 
 
     // handle direction when following encoder
